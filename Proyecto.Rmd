@@ -1,0 +1,96 @@
+---
+title: "Resultados obtenidos"
+author: "Jennifer Sherlyn López García"
+date: '2022-11-22'
+output: 
+  flexdashboard::flex_dashboard:
+    orentation: rows
+runtime: shiny
+---
+
+```{r setup, include = FALSE}
+library(ggplot2)
+library(dplyr)
+knitr::opts_chunk$set(fig.width = 5, fig.asp = 1/3)
+``` 
+
+Row 
+-------------------------------------
+
+### Base de datos
+
+```{r}
+  library(readxl)
+  library(dplyr)
+    pacman::p_load(
+    rio,
+    here,
+    janitor,
+    lubridate
+    )
+    data <- read_excel("Datos.xlsx")
+    DT::datatable(data)
+```
+
+Row {.tabset .tabset-fade}
+-------------------------------------
+
+### Ventas por fecha
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(shiny)
+renderPlotly({
+  f <- ggplot(data, aes(Fecha)) + geom_bar()
+  ggplotly(f)
+})  
+```
+
+
+### Gráfica tipo pie (de productos)
+
+```{r}
+  library(plotly)
+    fig <- plot_ly(data, labels = ~Producto, values = ~Cantidad, type='pie')
+    fig <- fig %>% layout(title = 'Ventas',
+                          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                          yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+    fig
+```
+
+
+### Cantidad vendida por productos
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(shiny)
+library(lubridate)
+datos <- data.frame(data)
+prod <- rev(unique(datos$Producto))
+selectInput("producto", label = "Cantidad vendida del producto:", choices = prod, selected = prod[1])
+  
+op1 <- reactive({
+    datos %>% filter(Producto == input$producto)
+  })
+
+renderPlotly({
+  # fig <- ggplot(op1(), aes(Cantidad, Producto)) + geom_point()
+  # ggplotly(fig)
+  fig <- plot_ly(op1(), x = ~Fecha, y = ~Cantidad, type = "bar")
+  fig
+})
+```
+
+### Cronograma
+```{r}
+  library(readxl)
+  library(lubridate)
+  library(plotly)
+    crono <- read_excel("cronograma.xlsx")
+    cronograma <- as.data.frame(crono)
+    fec <- as.Date(parse_date_time(cronograma$Fecha, c('dmy')))
+    fig <- plot_ly(cronograma, x=fec, y=as.numeric(cronograma$avance), type = 'scatter', mode = 'markers', color = ~Eventos) %>% layout(showlegend=FALSE, title = 'Cronograma', yaxis = list(title= '% de avance'))
+    fig
+```
